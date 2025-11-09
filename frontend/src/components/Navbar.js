@@ -1,13 +1,18 @@
-// navigation bar at the top
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar(){
   return (
-    <nav style={{ padding: "10px", background: "#f0f0f0" }}>
-      <Link to="/" style={{ marginRight: "10px" }}>Home</Link>
-      <Link to="/marketplace" style={{ marginRight: "10px" }}>Marketplace</Link>
-      <Link to="/about" style={{ marginRight: "10px" }}>About</Link>
-      <Link to="/profile" style={{ marginRight: "10px" }}>Profile</Link>
-    </nav>
+    <div className="nav">
+      <div className="container" style={{display:'flex',gap:16,alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <img src="/src/assets/logo.png" alt="LoopBack" style={{height:28}}/>
+        </div>
+        <nav>
+          <NavLink to="/marketplace" className={({isActive})=>isActive?'active':''}>marketplace</NavLink>
+          <NavLink to="/profile" className={({isActive})=>isActive?'active':''}>profile</NavLink>
+          <NavLink to="/about" className={({isActive})=>isActive?'active':''}>about</NavLink>
+        </nav>
+      </div>
+    </div>
   );
 }
