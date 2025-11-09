@@ -85,7 +85,8 @@ export default function Profile() {
               fontSize: "42px",
               margin: "0 0 24px",
               fontWeight: "900",
-              color: "#2b2232",
+              fontFamily: "'Winkle', cursive",
+              color: "#49213D",
             }}
           >
             your profile
@@ -123,7 +124,8 @@ export default function Profile() {
                   border: 0,
                   outline: 0,
                   fontSize: "15px",
-                  color: "#2b2232",
+                  fontFamily: "'Coolvetica', sans-serif",
+                  color: "#49213D",
                   fontWeight: "600",
                 }}
               />
@@ -163,7 +165,8 @@ export default function Profile() {
                   border: 0,
                   outline: 0,
                   fontSize: "15px",
-                  color: "#2b2232",
+                  fontFamily: "'Coolvetica', sans-serif",
+                  color: "#49213D",
                   fontWeight: "600",
                 }}
               />
@@ -190,8 +193,9 @@ export default function Profile() {
                 borderRadius: "12px",
                 padding: "10px 14px",
                 fontSize: "15px",
-                color: "#2b2232",
+                color: "#49213D",
                 fontWeight: "600",
+                fontFamily: "'Coolvetica', sans-serif",
               }}
             >
               {community}
@@ -212,10 +216,10 @@ export default function Profile() {
           <h3
             style={{
               fontFamily: "'Winkle', cursive",
-              fontSize: "32px",
+              fontSize: "42px",
               margin: "32px 0 20px",
               fontWeight: "900",
-              color: "#2b2232",
+              color: "#49213D",
             }}
           >
             settings
@@ -253,7 +257,8 @@ export default function Profile() {
                   border: 0,
                   outline: 0,
                   fontSize: "15px",
-                  color: "#2b2232",
+                  color: "#49213D",
+                  fontFamily: "'Coolvetica', sans-serif",
                   fontWeight: "600",
                 }}
               />
@@ -291,9 +296,10 @@ export default function Profile() {
                   flex: 1,
                   background: "transparent",
                   border: 0,
+                  fontFamily: "'Coolvetica', sans-serif",
                   outline: 0,
                   fontSize: "15px",
-                  color: "#2b2232",
+                  color: "#49213D",
                   fontWeight: "600",
                 }}
               />
@@ -332,7 +338,7 @@ export default function Profile() {
                 fontSize: "36px",
                 margin: "0 0 8px",
                 fontWeight: "900",
-                color: "#2b2232",
+                color: "#49213D",
               }}
             >
               {name}
@@ -344,6 +350,7 @@ export default function Profile() {
                 fontSize: "18px",
                 color: "#7ad37b",
                 margin: "0 0 4px",
+                fontFamily: "'Coolvetica', sans-serif",
                 fontWeight: "600",
               }}
             >
