@@ -9,7 +9,7 @@ export const api = axios.create({
   withCredentials: false,
 });
 
-/** ---------- Auth helpers (optional) ---------- */
+/** ---------- Token helpers ---------- */
 const LS_TOKEN = "loopback_token_v1";
 export const getToken = () => localStorage.getItem(LS_TOKEN) || "";
 export const setToken = (t) =>
@@ -21,11 +21,12 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-/** ---------- Mock mode helpers ---------- */
+/** ---------- Mock mode detection ---------- */
 const LS_LISTINGS = "loopback_listings_v1";
 const USE_MOCK =
   !baseURL || String(process.env.REACT_APP_USE_MOCK || "").trim() === "1";
 
+/** ---------- SEED LISTINGS (for no-backend path) ---------- */
 const SEED = [
   {
     id: "1",
@@ -33,7 +34,7 @@ const SEED = [
     type: "exchange",
     category: "art",
     community: "penbrooke meadows",
-    description: "",
+    description: "hey! i'm looking to exchange this picture of gerard way for some cds.",
     image: "",
     swatchColor: "#F590A6", // pink
   },
@@ -63,7 +64,6 @@ function ensureSeed() {
   const raw = localStorage.getItem(LS_LISTINGS);
   if (!raw) localStorage.setItem(LS_LISTINGS, JSON.stringify(SEED));
 }
-
 function readLocalListings() {
   ensureSeed();
   try {
@@ -73,7 +73,6 @@ function readLocalListings() {
     return [];
   }
 }
-
 function writeLocalListing(item) {
   const cur = readLocalListings();
   const id = String(Date.now());
@@ -82,7 +81,7 @@ function writeLocalListing(item) {
   return { ...item, id };
 }
 
-/** ---------- Listings ---------- */
+/** ---------- LISTINGS HOOK/APIs ---------- */
 export function useListings(filters = {}) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,12 +99,10 @@ export function useListings(filters = {}) {
         params.category = filters.category;
       if (filters.radiusKm) params.radiusKm = String(filters.radiusKm);
 
-      // Try real API first…
       if (!USE_MOCK) {
         const { data } = await api.get("/api/listings", { params });
         setListings(Array.isArray(data) ? data : data.items || []);
       } else {
-        // Mock mode: filter locally
         let data = readLocalListings();
         if (filters.query) {
           const q = String(filters.query).toLowerCase();
@@ -130,7 +127,6 @@ export function useListings(filters = {}) {
         setListings(data);
       }
     } catch (e) {
-      // If API fails in dev, fall back to local seed
       const data = readLocalListings();
       setListings(data);
       setErr(e?.response?.data?.message || e.message || "Failed to load listings");
@@ -140,7 +136,6 @@ export function useListings(filters = {}) {
   }, [filters.query, filters.type, filters.category, filters.radiusKm]);
 
   useEffect(() => {
-    // Always ensure seed exists for the no-backend path
     ensureSeed();
     reload();
   }, [reload]);
@@ -148,12 +143,10 @@ export function useListings(filters = {}) {
   return { listings, loading, err, reload, setListings };
 }
 
-// Create listing: writes to API if available, otherwise to localStorage
 export async function addListing(payload) {
   const isFD =
     typeof FormData !== "undefined" && payload instanceof FormData;
   if (USE_MOCK) {
-    // normalize to plain object
     let obj = payload;
     if (isFD) {
       obj = {};
@@ -161,57 +154,109 @@ export async function addListing(payload) {
     }
     return writeLocalListing(obj);
   }
-
   const headers = isFD ? {} : { "Content-Type": "application/json" };
   const body = isFD ? payload : JSON.stringify(payload);
   const { data } = await api.post("/api/listings", body, { headers });
   return data;
 }
 
-/** ---------- Profile/Auth stubs unchanged ---------- */
-export async function getMe() {
-  if (USE_MOCK) return { id: "me", name: "Demo User" };
-  const { data } = await api.get("/api/me");
-  return data;
-}
-export async function updateMe(patch) {
-  if (USE_MOCK) return { ok: true, ...patch };
-  const { data } = await api.patch("/api/me", patch);
-  return data;
-}
-export async function login({ email, password }) {
-  if (USE_MOCK) {
-    const token = "mock-token";
-    setToken(token);
-    return { token };
-  }
-  const { data } = await api.post("/api/auth/login", { email, password });
-  if (data?.token) setToken(data.token);
-  return data;
-}
-export function logout() {
-  setToken("");
-}
-export async function changePassword({ currentPassword, newPassword }) {
-  if (USE_MOCK) return { ok: true };
-  const { data } = await api.post("/api/auth/change-password", {
-    currentPassword,
-    newPassword,
-  });
-  return data;
-}
-
-// ---- Single listing helper ----
 export async function getListing(id) {
   try {
     if (api.defaults.baseURL) {
       const { data } = await api.get(`/api/listings/${id}`);
       return data;
     }
-  } catch (_) {} // fall through to local
-
-  // mock/local fallback
-  const arr = JSON.parse(localStorage.getItem("loopback_listings_v1") || "[]");
+  } catch (_) {}
+  const arr = JSON.parse(localStorage.getItem(LS_LISTINGS) || "[]");
   return arr.find((x) => String(x.id) === String(id)) || null;
 }
 
+/** ---------- MOCK AUTH ---------- */
+const LS_USERS = "loopback_users_v1";
+const LS_ME = "loopback_me";
+
+function readUsers() {
+  try { return JSON.parse(localStorage.getItem(LS_USERS) || "[]"); }
+  catch { return []; }
+}
+function writeUsers(users) {
+  localStorage.setItem(LS_USERS, JSON.stringify(users));
+}
+
+export const isLoggedIn = () => !!getToken();
+
+export async function register({ name, email, password, postalCode }) {
+  if (!USE_MOCK) {
+    // wire your real backend here when ready
+    throw new Error("Register not implemented for real API");
+  }
+  const users = readUsers();
+  const exists = users.some(u => u.email.toLowerCase() === String(email).toLowerCase());
+  if (exists) throw new Error("An account with this email already exists.");
+
+  const user = {
+    id: String(Date.now()),
+    name: name?.trim() || "new user",
+    email: String(email).trim(),
+    password: String(password),       // mock only
+    postalCode: postalCode || "",
+    community: "penbrooke meadows",
+    points: 1058,
+  };
+  users.push(user);
+  writeUsers(users);
+
+  const token = `mock-${user.id}`;
+  setToken(token);
+  localStorage.setItem(LS_ME, JSON.stringify(user));
+  return { token, user };
+}
+
+export async function login({ email, password }) {
+  if (USE_MOCK) {
+    const users = readUsers();
+    const user = users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
+    if (!user || user.password !== String(password)) {
+      throw new Error("Invalid email or password.");
+    }
+    const token = `mock-${user.id}`;
+    setToken(token);
+    localStorage.setItem(LS_ME, JSON.stringify(user));
+    return { token, user };
+  }
+  // Real API path (kept for future)
+  const { data } = await api.post("/api/auth/login", { email, password });
+  if (data?.token) setToken(data.token);
+  return data;
+}
+
+export function logout() {
+  setToken("");
+  localStorage.removeItem(LS_ME);
+}
+
+export async function getMe() {
+  if (USE_MOCK) {
+    const raw = localStorage.getItem(LS_ME);
+    return raw ? JSON.parse(raw) : null;
+  }
+  const { data } = await api.get("/api/me");
+  return data;
+}
+
+export async function updateMe(patch) {
+  if (USE_MOCK) {
+    const me = await getMe();
+    if (!me) throw new Error("Not signed in");
+    const next = { ...me, ...patch };
+    localStorage.setItem(LS_ME, JSON.stringify(next));
+
+    // mirror to LS_USERS so the email/password change survives
+    const users = readUsers();
+    const idx = users.findIndex(u => u.id === me.id);
+    if (idx >= 0) { users[idx] = { ...users[idx], ...patch }; writeUsers(users); }
+    return next;
+  }
+  const { data } = await api.patch("/api/me", patch);
+  return data;
+}
