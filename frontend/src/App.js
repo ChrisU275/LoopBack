@@ -21,7 +21,7 @@ export default function App() {
         <Route path="/marketplace" element={<Marketplace/>} />
         <Route path="/listing/:id" element={<ListingDetail/>} />
 
-        <Route path="/create" element={<CreateListing/>} />
+        <Route path="/create" element={<RequireAuth><CreateListing/></RequireAuth>} />
         <Route path="/about" element={<About/>} />
         <Route path="/messages" element={<Messages/>} />
         <Route path="/looking-for" element={<LookingFor/>} />
