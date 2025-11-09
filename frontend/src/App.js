@@ -8,6 +8,7 @@ import Messages from "./pages/Messages";
 import LookingFor from "./pages/LookingFor";
 import Leaderboard from "./pages/Leaderboard";
 import Navbar from "./components/Navbar";
+import ListingDetail from "./pages/ListingDetail";
 import "./index.css";
 
 export default function App(){
@@ -23,6 +24,7 @@ export default function App(){
         <Route path="/messages" element={<Messages/>} />
         <Route path="/looking-for" element={<LookingFor/>} />
         <Route path="/leaderboard" element={<Leaderboard/>} />
+        <Route path="/listing/:id" element={<ListingDetail/>} />
       </Routes>
     </BrowserRouter>
   );

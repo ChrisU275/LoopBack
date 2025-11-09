@@ -200,3 +200,18 @@ export async function changePassword({ currentPassword, newPassword }) {
   });
   return data;
 }
+
+// ---- Single listing helper ----
+export async function getListing(id) {
+  try {
+    if (api.defaults.baseURL) {
+      const { data } = await api.get(`/api/listings/${id}`);
+      return data;
+    }
+  } catch (_) {} // fall through to local
+
+  // mock/local fallback
+  const arr = JSON.parse(localStorage.getItem("loopback_listings_v1") || "[]");
+  return arr.find((x) => String(x.id) === String(id)) || null;
+}
+
