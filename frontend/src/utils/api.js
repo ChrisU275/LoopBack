@@ -6,27 +6,37 @@ import { useEffect, useState, useCallback } from "react";
 const baseURL = (process.env.REACT_APP_API_BASE || "").replace(/\/$/, "");
 export const api = axios.create({
   baseURL: baseURL || undefined,
-  withCredentials: false,
-});
-
-/** ---------- Token helpers ---------- */
-const LS_TOKEN = "loopback_token_v1";
-export const getToken = () => localStorage.getItem(LS_TOKEN) || "";
-export const setToken = (t) =>
-  t ? localStorage.setItem(LS_TOKEN, t) : localStorage.removeItem(LS_TOKEN);
-
-api.interceptors.request.use((cfg) => {
-  const token = getToken();
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  return cfg;
+  withCredentials: true, // enable cookies for Flask session
 });
 
 /** ---------- Mock mode detection ---------- */
-const LS_LISTINGS = "loopback_listings_v1";
 const USE_MOCK =
   !baseURL || String(process.env.REACT_APP_USE_MOCK || "").trim() === "1";
 
-/** ---------- SEED LISTINGS (for no-backend path) ---------- */
+/** ---------- LocalStorage helpers for mock mode ---------- */
+const LS_USERS = "loopback_users_v1";
+const LS_ME = "loopback_me";
+const LS_LISTINGS = "loopback_listings_v1";
+
+function readUsers() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_USERS) || "[]");
+  } catch {
+    return [];
+  }
+}
+function writeUsers(users) {
+  localStorage.setItem(LS_USERS, JSON.stringify(users));
+}
+function getToken() {
+  const me = localStorage.getItem(LS_ME);
+  return me ? `mock-${JSON.parse(me).id}` : "";
+}
+function setToken(token) {
+  if (!token) localStorage.removeItem(LS_ME);
+}
+
+/** ---------- SEED LISTINGS (mock) ---------- */
 const SEED = [
   {
     id: "1",
@@ -36,7 +46,7 @@ const SEED = [
     community: "penbrooke meadows",
     description: "hey! i'm looking to exchange this picture of gerard way for some cds.",
     image: "",
-    swatchColor: "#F590A6", // pink
+    swatchColor: "#F590A6",
   },
   {
     id: "2",
@@ -46,17 +56,7 @@ const SEED = [
     community: "penbrooke meadows",
     description: "",
     image: "",
-    swatchColor: "#FFC86B", // yellow
-  },
-  {
-    id: "3",
-    title: "picture of gerard way",
-    type: "donation",
-    category: "art",
-    community: "penbrooke meadows",
-    description: "",
-    image: "",
-    swatchColor: "#91A4D9", // blue
+    swatchColor: "#FFC86B",
   },
 ];
 
@@ -91,15 +91,13 @@ export function useListings(filters = {}) {
     setLoading(true);
     setErr("");
     try {
-      const params = {};
-      if (filters.query) params.query = filters.query;
-      if (filters.type && filters.type !== "All")
-        params.type = String(filters.type).toLowerCase();
-      if (filters.category && filters.category !== "All")
-        params.category = filters.category;
-      if (filters.radiusKm) params.radiusKm = String(filters.radiusKm);
-
       if (!USE_MOCK) {
+        const params = {};
+        if (filters.query) params.query = filters.query;
+        if (filters.type && filters.type !== "All") params.type = filters.type;
+        if (filters.category && filters.category !== "All") params.category = filters.category;
+        if (filters.radiusKm) params.radiusKm = filters.radiusKm;
+
         const { data } = await api.get("/api/listings", { params });
         setListings(Array.isArray(data) ? data : data.items || []);
       } else {
@@ -115,20 +113,14 @@ export function useListings(filters = {}) {
           );
         }
         if (filters.type && filters.type !== "All") {
-          data = data.filter(
-            (x) => String(x.type).toLowerCase() === String(filters.type).toLowerCase()
-          );
+          data = data.filter((x) => x.type.toLowerCase() === filters.type.toLowerCase());
         }
         if (filters.category && filters.category !== "All") {
-          data = data.filter(
-            (x) => String(x.category).toLowerCase() === String(filters.category).toLowerCase()
-          );
+          data = data.filter((x) => x.category.toLowerCase() === filters.category.toLowerCase());
         }
         setListings(data);
       }
     } catch (e) {
-      const data = readLocalListings();
-      setListings(data);
       setErr(e?.response?.data?.message || e.message || "Failed to load listings");
     } finally {
       setLoading(false);
@@ -144,95 +136,67 @@ export function useListings(filters = {}) {
 }
 
 export async function addListing(payload) {
-  const isFD =
-    typeof FormData !== "undefined" && payload instanceof FormData;
+  if (USE_MOCK) return writeLocalListing(payload);
+  const { data } = await api.post("/api/listings", payload);
+  return data;
+}
+export async function getListing(id) {
   if (USE_MOCK) {
-    let obj = payload;
-    if (isFD) {
-      obj = {};
-      for (const [k, v] of payload.entries()) obj[k] = v;
-    }
-    return writeLocalListing(obj);
+    const arr = JSON.parse(localStorage.getItem(LS_LISTINGS) || "[]");
+    return arr.find((x) => String(x.id) === String(id)) || null;
   }
-  const headers = isFD ? {} : { "Content-Type": "application/json" };
-  const body = isFD ? payload : JSON.stringify(payload);
-  const { data } = await api.post("/api/listings", body, { headers });
+  const { data } = await api.get(`/api/listings/${id}`);
   return data;
 }
 
-export async function getListing(id) {
-  try {
-    if (api.defaults.baseURL) {
-      const { data } = await api.get(`/api/listings/${id}`);
-      return data;
-    }
-  } catch (_) {}
-  const arr = JSON.parse(localStorage.getItem(LS_LISTINGS) || "[]");
-  return arr.find((x) => String(x.id) === String(id)) || null;
-}
-
-/** ---------- MOCK AUTH ---------- */
-const LS_USERS = "loopback_users_v1";
-const LS_ME = "loopback_me";
-
-function readUsers() {
-  try { return JSON.parse(localStorage.getItem(LS_USERS) || "[]"); }
-  catch { return []; }
-}
-function writeUsers(users) {
-  localStorage.setItem(LS_USERS, JSON.stringify(users));
-}
-
+/** ---------- AUTH APIs ---------- */
 export const isLoggedIn = () => !!getToken();
 
 export async function register({ name, email, password, postalCode }) {
-  if (!USE_MOCK) {
-    // wire your real backend here when ready
-    throw new Error("Register not implemented for real API");
+  if (USE_MOCK) {
+    const users = readUsers();
+    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase()))
+      throw new Error("Email already exists.");
+    const user = {
+      id: String(Date.now()),
+      name,
+      email,
+      password,
+      postalCode,
+      points: 0,
+    };
+    users.push(user);
+    writeUsers(users);
+    localStorage.setItem(LS_ME, JSON.stringify(user));
+    setToken(`mock-${user.id}`);
+    return { user };
   }
-  const users = readUsers();
-  const exists = users.some(u => u.email.toLowerCase() === String(email).toLowerCase());
-  if (exists) throw new Error("An account with this email already exists.");
 
-  const user = {
-    id: String(Date.now()),
-    name: name?.trim() || "new user",
-    email: String(email).trim(),
-    password: String(password),       // mock only
-    postalCode: postalCode || "",
-    community: "penbrooke meadows",
-    points: 1058,
-  };
-  users.push(user);
-  writeUsers(users);
-
-  const token = `mock-${user.id}`;
-  setToken(token);
-  localStorage.setItem(LS_ME, JSON.stringify(user));
-  return { token, user };
+  const { data } = await api.post("/api/auth/signup", { name, email, password, postalCode });
+  return data;
 }
 
 export async function login({ email, password }) {
   if (USE_MOCK) {
     const users = readUsers();
-    const user = users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-    if (!user || user.password !== String(password)) {
-      throw new Error("Invalid email or password.");
-    }
-    const token = `mock-${user.id}`;
-    setToken(token);
+    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!user || user.password !== password) throw new Error("Invalid credentials");
     localStorage.setItem(LS_ME, JSON.stringify(user));
-    return { token, user };
+    setToken(`mock-${user.id}`);
+    return { user };
   }
-  // Real API path (kept for future)
-  const { data } = await api.post("/api/auth/login", { email, password });
-  if (data?.token) setToken(data.token);
+
+  const { data } = await api.post("/api/auth/signin", { email, password });
   return data;
 }
 
-export function logout() {
-  setToken("");
-  localStorage.removeItem(LS_ME);
+export async function logout() {
+  if (USE_MOCK) {
+    localStorage.removeItem(LS_ME);
+    setToken("");
+    return;
+  }
+  await api.post("/api/auth/logout");
 }
 
 export async function getMe() {
@@ -240,7 +204,7 @@ export async function getMe() {
     const raw = localStorage.getItem(LS_ME);
     return raw ? JSON.parse(raw) : null;
   }
-  const { data } = await api.get("/api/me");
+  const { data } = await api.get("/api/auth/me");
   return data;
 }
 
@@ -250,13 +214,14 @@ export async function updateMe(patch) {
     if (!me) throw new Error("Not signed in");
     const next = { ...me, ...patch };
     localStorage.setItem(LS_ME, JSON.stringify(next));
-
-    // mirror to LS_USERS so the email/password change survives
     const users = readUsers();
-    const idx = users.findIndex(u => u.id === me.id);
-    if (idx >= 0) { users[idx] = { ...users[idx], ...patch }; writeUsers(users); }
+    const idx = users.findIndex((u) => u.id === me.id);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...patch };
+      writeUsers(users);
+    }
     return next;
   }
-  const { data } = await api.patch("/api/me", patch);
+  const { data } = await api.put("/api/auth/me", patch);
   return data;
 }
