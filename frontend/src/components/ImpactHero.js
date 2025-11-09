@@ -2,25 +2,61 @@ export default function ImpactHero({ impact = 1087236918 }) {
   const num = new Intl.NumberFormat().format(impact);
 
   return (
-    <div className="hero hero-center">
-      <div className="round-banner">thanks for saving the environment!</div>
+    <div className="hero hero-center" style={{ 
+      padding: '60px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '40px',
+      maxWidth: '900px',
+      margin: '0 auto'
+    }}>
 
-      {/* Sticker-style LOOPBACK – per-letter colors + tiny rotations */}
-      <div className="logo-word" aria-label="LoopBack">
-        <span className="sticker s1" style={{color:'#2c0f2a'}}>L</span>
-        <span className="sticker s2" style={{color:'#9a86df'}}>o</span>
-        <span className="sticker s3" style={{color:'#7b6cc6'}}>o</span>
-        <span className="sticker s4" style={{color:'#2b2232'}}>p</span>
-        <span className="sticker s5" style={{color:'#f1b247'}}>B</span>
-        <span className="sticker s6" style={{color:'#8bd77d'}}>a</span>
-        <span className="sticker s7" style={{color:'#7ae083'}}>c</span>
-        <span className="sticker s8" style={{color:'#2b2232'}}>k</span>
+      {/* LoopBack Logo Image */}
+      <div className="logo-word" aria-label="LoopBack" style={{
+        width: '110%',
+        maxWidth: '1000px',
+        margin: '40px 0'
+      }}>
+        <img 
+          src="/images/loopbackheader.png" 
+          alt="LoopBack" 
+          style={{ 
+            width: '100%', 
+            height: 'auto',
+            display: 'block'
+          }}
+        />
       </div>
 
-      <div className="impact-wrap">
-        <div className="impact-label">our impact:</div>
-        <h2 className="impact-number">{num}</h2>
-        <div className="impact-sub">items given new life</div>
+      {/* Impact Section */}
+      <div className="impact-wrap" style={{
+        marginTop: '20px',
+        textAlign: 'center'
+      }}>
+        <div className="impact-label" style={{
+          fontSize: '48px',
+          marginBottom: '10px'
+        }}>
+        </div>
+        <h2 className="impact-number" style={{
+          fontSize: '96px',
+          color: '#8093CA',
+          margin: '-110px 0',
+          lineHeight: '1',
+          fontFamily: 'Real Brush, cursive'
+        }}>
+          {num}
+        </h2>
+        <div className="impact-sub" style={{
+          fontSize: '36px',
+          color: '#4C223E',
+          marginTop: '110px',
+          WebkitTextStroke: '1px #4C223E',
+          stroke: '10px #4C223E'
+        }}>
+          items given new life
+        </div>
       </div>
     </div>
   );
