@@ -1,16 +1,16 @@
 @font-face {
   font-family: 'Winkle';
-  src: url('/src/assets/fonts/Winkle.ttf') format('truetype');
+  src: url('/src/assets/fonts/Winkle.otf') format('opentype');
   font-display: swap;
 }
 @font-face {
   font-family: 'Coolvetica';
-  src: url('/src/assets/fonts/Coolvetica.ttf') format('truetype');
+  src: url('/src/assets/fonts/Coolvetica.otf') format('opentype');
   font-display: swap;
 }
 @font-face {
   font-family: 'RealBrush';
-  src: url('/src/assets/fonts/RealBrush.ttf') format('truetype');
+  src: url('/src/assets/fonts/RealBrush.otf') format('opentype');
   font-display: swap;
 }
 
