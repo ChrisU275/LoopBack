@@ -1,17 +1,15 @@
-// src/App.js
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Marketplace from "./pages/Marketplace";
 import CreateListing from "./pages/CreateListing";
-import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Messages from "./pages/Messages";
 import LookingFor from "./pages/LookingFor";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import Navbar from "./components/Navbar";
-import RequireAuth from "./components/RequireAuth";
 import ListingDetail from "./pages/ListingDetail";
+import ProfileGate from "./pages/ProfileGate";
 import "./index.css";
 
 export default function App(){
@@ -28,18 +26,11 @@ export default function App(){
         <Route path="/leaderboard" element={<Leaderboard/>} />
         <Route path="/listing/:id" element={<ListingDetail/>} />
 
-        {/* NEW auth route */}
-        <Route path="/auth" element={<Auth/>} />
+        {/* Standalone auth page (optional to keep) */}
+        <Route path="/auth" element={<Auth />} />
 
-        {/* Guarded profile */}
-        <Route
-          path="/profile"
-          element={
-            <RequireAuth>
-              <Profile/>
-            </RequireAuth>
-          }
-        />
+        {/* Single entry: /profile handles both auth and profile */}
+        <Route path="/profile" element={<ProfileGate/>} />
       </Routes>
     </BrowserRouter>
   );
