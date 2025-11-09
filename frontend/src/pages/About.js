@@ -11,7 +11,7 @@ export default function About() {
       <section
         style={{
           maxWidth: 900,
-          margin: "40px auto 80px",
+          margin: "40px auto 80px",``
           background: "#fff",
           borderRadius: 16,
           boxShadow: "0 8px 24px rgba(0,0,0,.06)",
