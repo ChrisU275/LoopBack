@@ -1,51 +1,41 @@
-import { useMemo, useState, useEffect } from "react";
-import ListingCard from "../components/ListingCard";
-import SearchFilterBar from "../components/SearchFilterBar";
+import { useMemo, useState } from "react";
 import { useListings } from "../utils/api";
-
-const TABS = ['All','Donate','Trade','Repair'];
+import ListingCard from "../components/ListingCard";
+import { useNavigate } from "react-router-dom";
 
 export default function Marketplace(){
-  const { listings } = useListings(); // loads from CSV/local
-  const [tab,setTab] = useState('All');
-  const [query,setQuery] = useState('');
-  const [radiusKm,setRadiusKm] = useState(25);
-  const [category,setCategory] = useState('All');
+  const nav = useNavigate();
+  const { listings } = useListings();
+  const [q, setQ] = useState("");
 
   const filtered = useMemo(()=>{
-    let arr = listings;
-    if(tab!=='All') arr = arr.filter(x => x.type===tab.toLowerCase());
-    if(category!=='All') arr = arr.filter(x => x.category===category);
-    if(query) {
-      const q = query.toLowerCase();
-      arr = arr.filter(x => x.title.toLowerCase().includes(q));
-    }
-    return arr;
-  },[listings,tab,query,category]);
+    if(!q) return listings;
+    const s = q.toLowerCase();
+    return listings.filter(x => x.title?.toLowerCase().includes(s));
+  }, [q, listings]);
 
   return (
-    <div className="container">
-      <h1 style={{margin:'8px 0'}}>Marketplace</h1>
+    <div className="market">
+      <div className="market-title">loopback</div>
 
-      <div className="tabbar">
-        {TABS.map(t=>(
-          <button key={t} className={`tab ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{t}</button>
-        ))}
+      <div className="search-row">
+        <div className="search-pill">
+          <input
+            placeholder="what are you shopping for today?"
+            value={q}
+            onChange={(e)=>setQ(e.target.value)}
+          />
+          <button className="search-btn" onClick={()=>{ /* no-op for now */ }}>
+            search
+          </button>
+        </div>
       </div>
 
-      <SearchFilterBar
-        query={query}
-        setQuery={setQuery}
-        radiusKm={radiusKm}
-        setRadiusKm={setRadiusKm}
-        category={category}
-        setCategory={setCategory}
-      />
-
-      <div className="grid" style={{marginTop:12}}>
-        {filtered.map(item => <ListingCard key={item.id} item={item}/>)}
-        {filtered.length===0 && <p>No results.</p>}
+      <div className="market-grid">
+        {filtered.map(item => <ListingCard key={item.id} item={item} />)}
       </div>
+
+      <button className="fab" onClick={()=>nav("/create")} aria-label="Create a post">+</button>
     </div>
   );
 }
